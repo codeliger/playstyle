@@ -3,16 +3,16 @@ package main
 import "fmt"
 
 type Playstyle struct {
-	Infantry       float32
-	Cavalry        float32
-	Archers        float32
-	CavalryArchers float32
-	Monks          float32
-	Siege          float32
-	Water          float32
+	Infantry       float64
+	Cavalry        float64
+	Archers        float64
+	CavalryArchers float64
+	Monks          float64
+	Siege          float64
+	Water          float64
 }
 
-func (r *Playstyle) Versatility() float32 {
+func (r *Playstyle) Versatility() float64 {
 	return (r.Infantry + r.Cavalry + r.Archers + r.CavalryArchers + r.Monks + r.Siege + r.Water)
 }
 

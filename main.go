@@ -4,15 +4,24 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
+	"math"
 	"net/http"
+
+	ui "github.com/gizak/termui/v3"
+	"github.com/gizak/termui/v3/widgets"
 )
 
 func main() {
-
 	steamID := flag.String("id", "", "Steam ID")
 	matchCount := flag.Int("count", 1000, "Number of matches to retrieve")
 
 	flag.Parse()
+
+	if *steamID == "" {
+		fmt.Println("Please provide a steam ID")
+		return
+	}
 
 	civilizations, err := GetCivilazations()
 	if err != nil {
@@ -24,10 +33,66 @@ func main() {
 		fmt.Println("error getting matches but attempting to continue", err)
 	}
 
-	playerPlaystyle := CalculatePlaystyle(*steamID, civilizations, matches)
+	playstyle := CalculatePlaystyle(*steamID, civilizations, matches)
 
-	fmt.Printf("%+v\n", playerPlaystyle)
-	fmt.Printf("Found %d matches", len(matches))
+	fmt.Printf("%+v\n", playstyle)
+	fmt.Printf("Found %d matches, %f", len(matches), playstyle.Versatility())
+
+	if err := ui.Init(); err != nil {
+		log.Fatalf("failed to initialize termui: %v", err)
+	}
+	defer ui.Close()
+
+	pc := widgets.NewPieChart()
+	pc.Title = "Race Playstyle"
+	pc.SetRect(5, 5, 70, 36)
+	pc.Data = []float64{
+		playstyle.Archers / playstyle.Versatility() * 100,
+		playstyle.Cavalry / playstyle.Versatility() * 100,
+		playstyle.CavalryArchers / playstyle.Versatility() * 100,
+		playstyle.Infantry / playstyle.Versatility() * 100,
+		playstyle.Siege / playstyle.Versatility() * 100,
+		playstyle.Monks / playstyle.Versatility() * 100,
+		playstyle.Water / playstyle.Versatility() * 100,
+	}
+	pc.Colors = []ui.Color{130, 5, 1, ui.ColorWhite, 8, 3, 12}
+	pc.AngleOffset = -.5 * math.Pi
+	pc.LabelFormatter = func(i int, v float64) string {
+		var label string
+
+		switch i {
+		case 0:
+			label = "Archers"
+		case 1:
+			label = "Cavalry"
+		case 2:
+			label = "Cavalry Archers"
+		case 3:
+			label = "Infantry"
+		case 4:
+			label = "Siege"
+		case 5:
+			label = "Monks"
+		case 6:
+			label = "Water"
+		}
+
+		return fmt.Sprintf("%s: %.2f%%", label, v)
+	}
+
+	ui.Render(pc)
+
+	uiEvents := ui.PollEvents()
+
+	for {
+		select {
+		case e := <-uiEvents:
+			switch e.ID {
+			case "q", "<C-c>":
+				return
+			}
+		}
+	}
 }
 
 type Civilization struct {
