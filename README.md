@@ -2,8 +2,12 @@
 
 ## Playstyle analyzer helps you determine a players playstyle
 
+The purpose of this project was to see 
+if I could predict what units my opponent would make before the match even started
 
-To run it you need a steamid
+
+* visit your steam profile to find your numeric steam id
+* count is how many matches to analyze
 
 `go run ./ -id 76561197992402350 -count 2000`
 
