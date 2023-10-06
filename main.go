@@ -23,12 +23,17 @@ func main() {
 		return
 	}
 
-	civilizations, err := GetCivilazations()
+	api := AOE2NET{
+		MatchAPI: "https://aoe2.net/api/player/matches?game=aoe2de&steam_id=%s&count=%d&start=%d",
+		CivAPI:   "https://aoe2.net/api/strings?game=aoe2de&language=en",
+	}
+
+	civilizations, err := api.GetCivilazations()
 	if err != nil {
 		panic(err)
 	}
 
-	matches, err := GetAllMatches(*steamID, *matchCount)
+	matches, err := api.GetAllMatches(*steamID, *matchCount)
 	if err != nil {
 		fmt.Println("error getting matches but attempting to continue", err)
 	}
@@ -85,12 +90,10 @@ func main() {
 	uiEvents := ui.PollEvents()
 
 	for {
-		select {
-		case e := <-uiEvents:
-			switch e.ID {
-			case "q", "<C-c>":
-				return
-			}
+		e := <-uiEvents
+		switch e.ID {
+		case "q", "<C-c>":
+			return
 		}
 	}
 }
@@ -164,12 +167,15 @@ type Match struct {
 	} `json:"players"`
 }
 
-func GetCivilazations() ([]*Civilization, error) {
+type AOE2NET struct {
+	MatchAPI string
+	CivAPI   string
+}
+
+func (a AOE2NET) GetCivilazations() ([]*Civilization, error) {
 	var civilizations []*Civilization
 
-	civilizationAPI := "https://aoe2.net/api/strings?game=aoe2de&language=en"
-
-	r, err := http.Get(civilizationAPI)
+	r, err := http.Get(a.CivAPI)
 	if err != nil {
 		return civilizations, err
 	}
@@ -195,7 +201,7 @@ func GetCivilazations() ([]*Civilization, error) {
 	return response.Civilizations, nil
 }
 
-func GetMatches(steamID string, count int, startIndex int) ([]Match, error) {
+func (a AOE2NET) GetMatches(steamID string, count int, startIndex int) ([]Match, error) {
 	var matches []Match
 
 	matchAPI := "https://aoe2.net/api/player/matches?game=aoe2de&steam_id=%s&count=%d&start=%d"
@@ -213,7 +219,7 @@ func GetMatches(steamID string, count int, startIndex int) ([]Match, error) {
 	return matches, nil
 }
 
-func GetAllMatches(steamID string, amount int) ([]Match, error) {
+func (a AOE2NET) GetAllMatches(steamID string, amount int) ([]Match, error) {
 	var allMatches []Match
 
 	var matchesRetrieved int
@@ -223,7 +229,7 @@ func GetAllMatches(steamID string, amount int) ([]Match, error) {
 		if batchAmount > 1000 {
 			batchAmount = 1000
 		}
-		matches, err := GetMatches(steamID, batchAmount, matchesRetrieved)
+		matches, err := a.GetMatches(steamID, batchAmount, matchesRetrieved)
 		if err != nil {
 			return allMatches, err
 		}
@@ -256,9 +262,7 @@ func CalculatePlaystyle(steamID string, civilizations []*Civilization, matches [
 						playerPlaystyle.Water += civilization.Playstyle.Water
 					}
 				}
-
 			}
-
 		}
 	}
 
