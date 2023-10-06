@@ -11,5 +11,5 @@ if I could predict what units my opponent would make before the match even start
 * visit your steam profile to find your numeric steam id
 * count is how many matches to analyze
 
-* `go run ./ -id 76561197992402350 -count 2000`
+* `playstyle -id 76561197992402350 -count 2000`
 
